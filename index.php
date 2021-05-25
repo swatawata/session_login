@@ -7,6 +7,10 @@ session_start();
 $email = '';
 $password = '';
 $_SESSION['loginStatus'] = false;
+
+if (!isset($_SESSION['email'])) $_SESSION['email'] = '';
+if (!isset($_SESSION['error'])) $_SESSION['error'] = '';
+
 $sessionEmail = ($_SESSION['email'] != '') ? $_SESSION['email'] : '';
 $catchError = ($_SESSION['error'] != '') ? $_SESSION['error'] . "<br />": '';
 
