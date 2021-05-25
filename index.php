@@ -1,37 +1,51 @@
 <?php
-$loginEmail = 'root';
-$loginPassword = '1111';
-
 session_start();
 
 $email = '';
 $password = '';
 $_SESSION['loginStatus'] = false;
+$count = 0;
 
 if (!isset($_SESSION['email'])) $_SESSION['email'] = '';
 if (!isset($_SESSION['error'])) $_SESSION['error'] = '';
 
 $sessionEmail = ($_SESSION['email'] != '') ? $_SESSION['email'] : '';
-$catchError = ($_SESSION['error'] != '') ? $_SESSION['error'] . "<br />": '';
+$catchError = ($_SESSION['error'] != '') ? $_SESSION['error'] . "<br />" : '';
 
-$pushButton = isset($_POST['send']);
+$clickButton = $_SERVER["REQUEST_METHOD"] == "POST";
 
-if ($pushButton) {
-
+if ($clickButton) {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    if ($email == $loginEmail && $password == $loginPassword) {
-        $_SESSION['email'] = '';
-        $_SESSION['error'] = '';
-        $_SESSION['loginStatus'] = true;
-    } else {
-        $_SESSION['email'] = $email;
-        $_SESSION['error'] = 'ログインできませんでした';
-        header("Location: ./");
-        exit;
+    $db['user_name'] = "root";
+    $db['password'] = "root";
+
+    $dbh = new PDO("mysql:host=localhost; dbname=todoList; charset=utf8", $db['user_name'], $db['password']);
+
+    $sql = "select * from users where email LIKE '$email%'";
+    $res = $dbh->query($sql);
+    $count = $res->rowCount();
+    if ($count > 0) {
+        $sql = "select * from users where email LIKE '$email%'";
+        $res = $dbh->query($sql);
+
+        foreach ($res as $value) {
+            if ($value[1] == $email && password_verify($password, $value[2])) {
+                $_SESSION['email'] = '';
+                $_SESSION['error'] = '';
+                $_SESSION['loginStatus'] = true;
+            } else {
+                $_SESSION['email'] = $email;
+                $_SESSION['error'] = 'ログインできませんでした';
+                header("Location: ./");
+                exit;
+            }
+        }
     }
 }
+
+
 
 $form = '
     <div>
@@ -77,4 +91,5 @@ if ($setLogout) $_SESSION['loginStatus'] = false;
     }
     ?>
 </body>
+
 </html>

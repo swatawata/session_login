@@ -17,24 +17,24 @@ $confirm = "<div>
             </div> ";
 
 $email = $_SESSION['email'];
-$hashedPassword = password_hash($_SESSION['password'], PASSWORD_DEFAULT); 
+$hashedPassword = password_hash($_SESSION['password'], PASSWORD_DEFAULT);
 
 if (isset($_POST["return"])) {
     header("Location: ./newAccount.php");
     exit;
 } elseif (isset($_POST["regist"])) {
 
-    $user_name = "root";
-    $password = "root";
+    $db['user_name'] = "root";
+    $db['password'] = "root";
 
-    $dbh = new PDO("mysql:host=localhost; dbname=todoList; charset=utf8", $user_name, $password);
+    $dbh = new PDO("mysql:host=localhost; dbname=todoList; charset=utf8", $db['user_name'], $db['password']);
 
-    $sql = "
-        CREATE TABLE users (
-            id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            email VARCHAR(255) NOT NULL,
-            password VARCHAR(255) NOT NULL
-        )";
+    // $sql = "
+    //     CREATE TABLE users (
+    //         id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    //         email VARCHAR(255) NOT NULL,
+    //         password VARCHAR(255) NOT NULL
+    //     )";
 
     $sql = "INSERT INTO users(email, password) VALUES ('$email', '$hashedPassword')";
     var_dump($sql);
