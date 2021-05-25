@@ -16,6 +16,9 @@ $confirm = "<div>
                 </form>
             </div> ";
 
+$email = $_SESSION['email'];
+$hashedPassword = password_hash($_SESSION['password'], PASSWORD_DEFAULT); 
+
 if (isset($_POST["return"])) {
     header("Location: ./newAccount.php");
     exit;
@@ -26,14 +29,14 @@ if (isset($_POST["return"])) {
 
     $dbh = new PDO("mysql:host=localhost; dbname=todoList; charset=utf8", $user_name, $password);
 
-    // $sql = "
-    //     CREATE TABLE users (
-    //         id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    //         email VARCHAR(255) NOT NULL,
-    //         password VARCHAR(64) NOT NULL
-    //     )";
+    $sql = "
+        CREATE TABLE users (
+            id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(255) NOT NULL,
+            password VARCHAR(255) NOT NULL
+        )";
 
-    $sql = "INSERT INTO users(email, password) VALUES ('$_SESSION[email]', '$_SESSION[password]')";
+    $sql = "INSERT INTO users(email, password) VALUES ('$email', '$hashedPassword')";
     var_dump($sql);
     $res = $dbh->query($sql);
 
