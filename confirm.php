@@ -20,6 +20,23 @@ if (isset($_POST["return"])) {
     header("Location: ./newAccount.php");
     exit;
 } elseif (isset($_POST["regist"])) {
+
+    $user_name = "root";
+    $password = "root";
+
+    $dbh = new PDO("mysql:host=localhost; dbname=todoList; charset=utf8", $user_name, $password);
+
+    // $sql = "
+    //     CREATE TABLE users (
+    //         id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    //         email VARCHAR(255) NOT NULL,
+    //         password VARCHAR(64) NOT NULL
+    //     )";
+
+    $sql = "INSERT INTO users(email, password) VALUES ('$_SESSION[email]', '$_SESSION[password]')";
+    var_dump($sql);
+    $res = $dbh->query($sql);
+
     $_SESSION = [];
     header("Location: ./end.php");
     exit;
