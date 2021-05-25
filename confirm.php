@@ -29,15 +29,7 @@ if (isset($_POST["return"])) {
 
     $dbh = new PDO("mysql:host=localhost; dbname=todoList; charset=utf8", $db['user_name'], $db['password']);
 
-    // $sql = "
-    //     CREATE TABLE users (
-    //         id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    //         email VARCHAR(255) NOT NULL,
-    //         password VARCHAR(255) NOT NULL
-    //     )";
-
     $sql = "INSERT INTO users(email, password) VALUES ('$email', '$hashedPassword')";
-    var_dump($sql);
     $res = $dbh->query($sql);
 
     $_SESSION = [];

@@ -1,6 +1,20 @@
 <?php
 session_start();
 
+$db['user_name'] = "root";
+$db['password'] = "root";
+
+$dbh = new PDO("mysql:host=localhost; dbname=todoList; charset=utf8", $db['user_name'], $db['password']);
+
+$sql = "
+        CREATE TABLE IF NOT EXISTS users (
+            id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(255) NOT NULL,
+            password VARCHAR(255) NOT NULL
+        )";
+
+$res = $dbh->query($sql);
+
 $email = '';
 $password = '';
 $_SESSION['loginStatus'] = false;
@@ -17,11 +31,6 @@ $clickButton = $_SERVER["REQUEST_METHOD"] == "POST";
 if ($clickButton) {
     $email = $_POST['email'];
     $password = $_POST['password'];
-
-    $db['user_name'] = "root";
-    $db['password'] = "root";
-
-    $dbh = new PDO("mysql:host=localhost; dbname=todoList; charset=utf8", $db['user_name'], $db['password']);
 
     $sql = "select * from users where email LIKE '$email%'";
     $res = $dbh->query($sql);
