@@ -61,17 +61,16 @@ if ($setLogout) $_SESSION['loginStatus'] = false;
 <body>
     <h2>ログイン</h2>
     <?php
+    //login
+    if ($_SESSION['loginStatus'] == true) {
+        echo $logout;
+    }
     //not login
     if ($_SESSION['loginStatus'] == false) {
         echo $form;
         echo $catchError;
         echo '<a href="./newAccount.php">アカウントを作る</a>';
     }
-    //login
-    if ($_SESSION['loginStatus'] == true) {
-        echo $logout;
-    }
     ?>
-
 </body>
 </html>
