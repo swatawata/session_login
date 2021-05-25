@@ -51,6 +51,11 @@ if ($clickButton) {
                 exit;
             }
         }
+    } else {
+        $_SESSION['email'] = $email;
+        $_SESSION['error'] = 'ログインできませんでした';
+        header("Location: ./");
+        exit;
     }
 }
 
