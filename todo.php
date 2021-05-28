@@ -26,17 +26,14 @@ $appendTask = "
         </div>
 ";
 
+//sort
 $sorts = [];
 
-$currentUrl = $_SERVER['REQUEST_URI'];
+$dateAsc = "<a href=./todo.php?sort=1>日付昇順</a>";
+$dateDesc = "<a href=./todo.php?sort=2>日付降順</a><br />";
 
-if ($currentUrl == "/todoList/todo.php") {
-    $dateAsc = "<a href=$currentUrl?sort=1>日付昇順</a>";
-    $dateDesc = "<a href=$currentUrl?sort=2>日付降順</a><br />";
-} else {
-    $dateAsc = "<a href=./$currentUrl&sort=1>日付昇順</a>";
-    $dateDesc = "<a href=./$currentUrl&sort=2>日付降順</a><br />";
-}
+$dateAsc = "<a href=././todo.php?search=$_SESSION[search]&sort=1>日付昇順</a>";
+$dateDesc = "<a href=././todo.php?search=$_SESSION[search]&sort=2>日付降順</a><br />";
 
 $sorts = [$dateAsc, $dateDesc];
 
