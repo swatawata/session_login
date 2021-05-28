@@ -11,7 +11,7 @@ $logout = '<a href="./?logout">logout</a><br />';
 
 $searchForm = "
     <div>
-        <form action=./todo.php?search method=POST>
+        <form action=./todo.php?search=$_SESSION[search] method=POST>
         <input type=search name=search placeholder=キーワードを入力>
         <input type=submit name=submit value=検索>
         </form>
@@ -25,17 +25,6 @@ $appendTask = "
             </form>
         </div>
 ";
-
-//sort
-$sorts = [];
-
-$dateAsc = "<a href=./todo.php?sort=1>日付昇順</a>";
-$dateDesc = "<a href=./todo.php?sort=2>日付降順</a><br />";
-
-$dateAsc = "<a href=././todo.php?search=$_SESSION[search]&sort=1>日付昇順</a>";
-$dateDesc = "<a href=././todo.php?search=$_SESSION[search]&sort=2>日付降順</a><br />";
-
-$sorts = [$dateAsc, $dateDesc];
 
 
 
@@ -108,17 +97,39 @@ if (isset($_GET['complete'])) {
 
         //search
         $searchSql = "";
+        $sortSql = "";
         $search = "";
+        $sorts = [];
         $actionLocation = "./todo.php";
+
         if (isset($_GET['search'])) {
             $search = $_SESSION['search'];
-            $searchSql = " && contents LIKE '%$search%'";
+            $searchSql = "&& contents LIKE '%$_SESSION[search]%'";
             $showAllTask = "<a href=./todo.php>全件表示に戻す</a><br />";
-            $actionLocation = "./todo.php?search=$search";
+            $actionLocation = "./todo.php?search=$_SESSION[search]";
+
+            //sort
+            $dateAsc = "<a href=././todo.php?search=$_SESSION[search]&sort=1>日付昇順</a>";
+            $dateDesc = "<a href=././todo.php?search=$_SESSION[search]&sort=2>日付降順</a><br />";
+        } else {
+            $dateAsc = "<a href=./todo.php?sort=1>日付昇順</a>";
+            $dateDesc = "<a href=./todo.php?sort=2>日付降順</a><br />";
         }
 
+        if (isset($_GET['sort'])) {
+            if ($_GET['sort'] == 1) {
+                $sortSql = "order by deadline ASC";
+                $actionLocation = "./todo.php?search=$_SESSION[search]&sort=1";
+            } elseif ($_GET['sort'] == 2) {
+                $sortSql = "order by deadline DESC";
+                $actionLocation = "./todo.php?search=$_SESSION[search]&sort=2";
+            }
+        }
+
+        $sorts = [$dateAsc, $dateDesc];
+
         //default task list
-        $sql = "select * from tasks where user_id=$_SESSION[userId]$searchSql";
+        $sql = "select * from tasks where user_id=$_SESSION[userId] $searchSql $sortSql";
         $res = $dbh->query($sql);
         $noTasks = "";
         $location = "";
