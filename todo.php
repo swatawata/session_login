@@ -27,6 +27,91 @@ $appendTask = "
 ";
 
 
+if ($_SESSION['loginStatus'] == true) {
+    if (isset($_POST['search']) && $_POST['search'] != "") $_SESSION['search'] = $_POST['search'];
+
+    //search
+    $searchSql = "";
+    $sortSql = "";
+    $search = "";
+    $sorts = [];
+    $actionLocation = "./todo.php";
+
+    if (isset($_GET['search'])) {
+        $search = $_SESSION['search'];
+        $searchSql = "&& contents LIKE '%$_SESSION[search]%'";
+        $showAllTask = "<a href=./todo.php>全件表示に戻す</a><br />";
+        $actionLocation = "./todo.php?search=$_SESSION[search]";
+
+        $dateAsc = "<a href=././todo.php?search=$_SESSION[search]&sort=1>日付昇順</a>";
+        $dateDesc = "<a href=././todo.php?search=$_SESSION[search]&sort=2>日付降順</a><br />";
+    } else {
+        $dateAsc = "<a href=./todo.php?sort=1>日付昇順</a>";
+        $dateDesc = "<a href=./todo.php?sort=2>日付降順</a><br />";
+    }
+
+    //sort
+    if (isset($_GET['sort'])) {
+        if ($_GET['sort'] == 1) {
+            $sortSql = "order by deadline ASC";
+            $actionLocation = "./todo.php?search=$_SESSION[search]&sort=1";
+        } elseif ($_GET['sort'] == 2) {
+            $sortSql = "order by deadline DESC";
+            $actionLocation = "./todo.php?search=$_SESSION[search]&sort=2";
+        }
+    }
+
+    $sorts = [$dateAsc, $dateDesc];
+
+    //default task list
+    $sql = "select * from tasks where user_id=$_SESSION[userId] $searchSql $sortSql";
+    var_dump($sql);
+    $res = $dbh->query($sql);
+    $noTasks = "";
+    $location = "";
+    $taskList = [];
+    foreach ($res as $key => $task) {
+        $check = "";
+        $tasks[] = $task['contents'];
+        if ($task['status'] == 1) $check = "checked=checked";
+
+        if (isset($_GET['search'])) $location = "<a href=./todo.php?search=$search&complete=$task[contents]>完了</a><br />";
+        else $location = "<a href=./todo.php?complete=$task[contents]>完了</a><br />";
+
+        $taskList[] = "<input type=hidden name=checkbox[$key] value=0><input type=checkbox name=checkbox[$key] value=1 $check>$task[contents] $task[deadline] $task[created_at] $task[update_at] $location";
+    }
+    if (count($taskList) == 0) $noTasks = "<p>現在タスクはありません</p>";
+
+    //click checkbox
+    $_SESSION['saved'] = "";
+    $searchSql = " && contents LIKE '%$_SESSION[search]%'";
+    if (isset($_POST['checkbox'])) {
+        $checkboxies = $_POST['checkbox'];
+        $sql = "";
+        $sql = (isset($_GET['search'])) ? "select * from tasks where user_id=$_SESSION[userId]$searchSql" : "select * from tasks where user_id=$_SESSION[userId]";
+
+        $res = $dbh->query($sql);
+
+        $save = false;
+        foreach ($res as $key => $task) {
+            if ($checkboxies[$key] == $task['status']) continue;
+            $statusId = $checkboxies[$key];
+            $sql = "";
+            $sql = "update tasks set status = $statusId where user_id = $_SESSION[userId] && contents = '$task[contents]'";
+            var_dump($sql);
+            var_dump();
+            $dbh->query($sql);
+            $save = true;
+        }
+
+        //save alert
+        if ($save) {
+            $_SESSION['saved'] = "<p>セーブされました</p>";
+            // header("Location: $actionLocation");
+            // exit;
+        }
+    }
+}
 
 //append tasks
 if (isset($_POST['append'])) {
@@ -40,33 +125,7 @@ if (isset($_POST['append'])) {
 $setLogout = isset($_GET['logout']);
 if ($setLogout) $_SESSION['loginStatus'] = false;
 
-//click checkbox
-$save = false;
-$searchSql = " && contents LIKE '%$_SESSION[search]%'";
-if (isset($_POST['checkbox'])) {
-    $checkboxies = $_POST['checkbox'];
-    $sql = "";
-    if (isset($_GET['search'])) $sql = "select * from tasks where user_id=$_SESSION[userId]$searchSql";
-    else $sql = "select * from tasks where user_id=$_SESSION[userId]";
 
-    $res = $dbh->query($sql);
-    foreach ($res as $key => $task) {
-        if ($checkboxies[$key] == 0) {
-            $sql = "";
-            $sql = "update tasks set status = 0 where user_id = $_SESSION[userId] && contents = '$task[contents]'";
-            $res = $dbh->query($sql);
-        } elseif ($checkboxies[$key] == 1) {
-            $sql = "";
-            $sql = "update tasks set status = 1 where user_id = $_SESSION[userId] && contents = '$task[contents]'";
-            $res = $dbh->query($sql);
-        }
-    }
-    $save = true;
-}
-
-//save alert
-$saved = "";
-if ($save) $saved = "<p>セーブされました</p>";
 
 //complete click
 if (isset($_GET['complete'])) {
@@ -74,6 +133,7 @@ if (isset($_GET['complete'])) {
     $sql = "DELETE FROM `tasks` WHERE user_id=$_SESSION[userId] && contents='$complete'";
     $res = $dbh->query($sql);
 }
+
 
 
 ?>
@@ -93,59 +153,6 @@ if (isset($_GET['complete'])) {
 
     //login
     if ($_SESSION['loginStatus'] == true) {
-        if (isset($_POST['search']) && $_POST['search'] != "") $_SESSION['search'] = $_POST['search'];
-
-        //search
-        $searchSql = "";
-        $sortSql = "";
-        $search = "";
-        $sorts = [];
-        $actionLocation = "./todo.php";
-
-        if (isset($_GET['search'])) {
-            $search = $_SESSION['search'];
-            $searchSql = "&& contents LIKE '%$_SESSION[search]%'";
-            $showAllTask = "<a href=./todo.php>全件表示に戻す</a><br />";
-            $actionLocation = "./todo.php?search=$_SESSION[search]";
-
-            //sort
-            $dateAsc = "<a href=././todo.php?search=$_SESSION[search]&sort=1>日付昇順</a>";
-            $dateDesc = "<a href=././todo.php?search=$_SESSION[search]&sort=2>日付降順</a><br />";
-        } else {
-            $dateAsc = "<a href=./todo.php?sort=1>日付昇順</a>";
-            $dateDesc = "<a href=./todo.php?sort=2>日付降順</a><br />";
-        }
-
-        if (isset($_GET['sort'])) {
-            if ($_GET['sort'] == 1) {
-                $sortSql = "order by deadline ASC";
-                $actionLocation = "./todo.php?search=$_SESSION[search]&sort=1";
-            } elseif ($_GET['sort'] == 2) {
-                $sortSql = "order by deadline DESC";
-                $actionLocation = "./todo.php?search=$_SESSION[search]&sort=2";
-            }
-        }
-
-        $sorts = [$dateAsc, $dateDesc];
-
-        //default task list
-        $sql = "select * from tasks where user_id=$_SESSION[userId] $searchSql $sortSql";
-        $res = $dbh->query($sql);
-        $noTasks = "";
-        $location = "";
-        $taskList = [];
-        foreach ($res as $key => $task) {
-            $check = "";
-            $tasks[] = $task['contents'];
-            if ($task['status'] == 1) $check = "checked=checked";
-
-            if (isset($_GET['search'])) $location = "<a href=./todo.php?search=$search&complete=$task[contents]>完了</a><br />";
-            else $location = "<a href=./todo.php?complete=$task[contents]>完了</a><br />";
-
-            $taskList[] = "<input type=hidden name=checkbox[$key] value=0><input type=checkbox name=checkbox[$key] value=1 $check>$task[contents] $task[deadline] $task[created_at] $task[update_at] $location";
-        }
-        if (count($taskList) == 0) $noTasks = "<p>現在タスクはありません</p>";
-
         echo $logout;
         echo $searchForm;
         echo "<h2>タスク一覧</h2>";
@@ -166,7 +173,7 @@ if (isset($_GET['complete'])) {
         </form>
     </div>
     <?php
-    echo $saved;
+    if (!empty($_SESSION['saved'])) echo $_SESSION['saved'];
     ?>
 </body>
 
