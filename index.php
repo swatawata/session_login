@@ -14,7 +14,7 @@ $dbh = new PDO("mysql:host=localhost; dbname=todoList; charset=utf8", $db['user_
 
 
 $showAllTask = "";
-$jobs = ["<div class='flex block mb-3'>", "<div class='mr-3 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded'><a href=./todo.php?not-done><span class=text-white>未完了</span></a></div>", "<div class='bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded'><a href=./todo.php?done><span class=text-white>完了</span></a></div><br />", "</div>"];
+$jobs = ["<div class='flex block mb-3'>", "<div class='mr-3 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded'><a href=./index.php?not-done><span class=text-white>未完了</span></a></div>", "<div class='bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded'><a href=./index.php?done><span class=text-white>完了</span></a></div><br />", "</div>"];
 
 $list = (isset($_GET['done'])) ? "<h2 class='mb-2 text-3xl'>完了タスク一覧</h2>" : "<h2 class='mb-2 text-3xl'>未完了タスク一覧</h2>";
 
@@ -32,18 +32,18 @@ if (isset($_GET['search'])) {
     $showAllTask = "<a class='text-blue-600' href=./todo.php>全件表示に戻す</a><br />";
 
     $dateAsc = (isset($_GET['done']))
-        ? "<a class='text-blue-600' href=./todo.php?search=$_SESSION[search]&done&sort=asc>締め切り昇順</a>"
-        : "<a class='text-blue-600' href=./todo.php?search=$_SESSION[search]&sort=asc>締め切り昇順</a>";
+        ? "<a class='text-blue-600' href=./index.php?search=$_SESSION[search]&done&sort=asc>締め切り昇順</a>"
+        : "<a class='text-blue-600' href=./index.php?search=$_SESSION[search]&sort=asc>締め切り昇順</a>";
     $dateDesc = (isset($_GET['done']))
-        ? "<a class='text-blue-600' href=./todo.php?search=$_SESSION[search]&done&sort=desc>締め切り降順</a><br />"
-        : "<a class='text-blue-600' href=./todo.php?search=$_SESSION[search]&sort=desc>締め切り降順</a><br />";
+        ? "<a class='text-blue-600' href=./index.php?search=$_SESSION[search]&done&sort=desc>締め切り降順</a><br />"
+        : "<a class='text-blue-600' href=./index.php?search=$_SESSION[search]&sort=desc>締め切り降順</a><br />";
 } else {
     $dateAsc = (isset($_GET['done']))
-        ? "<a class='text-blue-600 mr-3' href=./todo.php?done&sort=asc>締め切り昇順</a>"
-        : "<a class='text-blue-600 mr-3' href=./todo.php?sort=asc>締め切り昇順</a>";
+        ? "<a class='text-blue-600 mr-3' href=./index.php?done&sort=asc>締め切り昇順</a>"
+        : "<a class='text-blue-600 mr-3' href=./index.php?sort=asc>締め切り昇順</a>";
     $dateDesc = (isset($_GET['done']))
-        ? "<a class='text-blue-600' href=./todo.php?done&sort=desc>締め切り降順</a><br />"
-        : "<a class='text-blue-600' href=./todo.php?sort=desc>締め切り降順</a><br />";
+        ? "<a class='text-blue-600' href=./index.php?done&sort=desc>締め切り降順</a><br />"
+        : "<a class='text-blue-600' href=./index.php?sort=desc>締め切り降順</a><br />";
 }
 
 //sort
@@ -77,8 +77,8 @@ foreach ($res as $key => $task) {
 
     //form
     $complete = (isset($_GET['search']))
-        ? "<a class='text-blue-600' href=./todo.php?search=$search&status=$task[status]&contents=$task[contents]>$job</a><br />"
-        : "<a class='text-blue-600' href=./todo.php?status=$task[status]&contents=$task[contents]>$job</a><br />";
+        ? "<a class='text-blue-600' href=./index.php?search=$search&status=$task[status]&contents=$task[contents]>$job</a><br />"
+        : "<a class='text-blue-600' href=./index.php?status=$task[status]&contents=$task[contents]>$job</a><br />";
 
 
     $taskList[] = "<p class='mb-3'>$task[contents] $task[deadline] $complete</p>";
@@ -112,17 +112,17 @@ if (isset($_GET['status'])) {
     $contents = $_GET['contents'];
     $sql = "update tasks set status = $statusId where user_id = $_SESSION[userId] && contents = '$contents'";
     $res = $dbh->query($sql);
-    header("Location: ./todo.php");
+    header("Location: ./index.php");
     exit;
 }
 
 
 $logout = "<a href=./logout.php><span class='text-white leading-9'>ログアウト</span></a><br />";
 
-$searchAction = (isset($_GET['done'])) ? "./todo.php?search=$_SESSION[search]&done" : "./todo.php?search=$_SESSION[search]";
+$searchAction = (isset($_GET['done'])) ? "./index.php?search=$_SESSION[search]&done" : "./index.php?search=$_SESSION[search]";
 
 if (isset($_POST['search']) && empty($_POST['search'])) {
-    header("Location: ./todo.php");
+    header("Location: ./index.php");
     exit;
 }
 
@@ -175,7 +175,7 @@ $header = "<div class='mb-3'><span>タスク名</span> <span>|</span> <span>締�
             echo "$showAllTask";
             echo $noTasks;
             if (isset($_GET['done'])) echo "";
-            else echo "<a class='text-blue-600 text-5xl block mb-6' href=./todo.php?new-task=true>+</a>";
+            else echo "<a class='text-blue-600 text-5xl block mb-6' href=./index.php?new-task=true>+</a>";
             echo $header;
             if (filter_input(INPUT_GET, 'new-task', FILTER_VALIDATE_BOOL)) echo $appendTask;
             echo implode("\n", $taskForm);
