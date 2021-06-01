@@ -1,91 +1,153 @@
 <?php
+
 session_start();
+
+if ($_SESSION['loginStatus'] == false) {
+    header("Location: ./login_form.php");
+    exit;
+}
 
 $db['user_name'] = "root";
 $db['password'] = "root";
 
 $dbh = new PDO("mysql:host=localhost; dbname=todoList; charset=utf8", $db['user_name'], $db['password']);
 
-$sql = "
-        CREATE TABLE IF NOT EXISTS users (
-            id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            email VARCHAR(255) NOT NULL UNIQUE,
-            password VARCHAR(255) NOT NULL
-        )";
 
-$res = $dbh->query($sql);
+$showAllTask = "";
+$jobs = ["<div class='flex block mb-3'>", "<div class='mr-3 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded'><a href=./todo.php?not-done><span class=text-white>未完了</span></a></div>", "<div class='bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded'><a href=./todo.php?done><span class=text-white>完了</span></a></div><br />", "</div>"];
 
-$sql = "
-        CREATE TABLE IF NOT EXISTS tasks(
-            id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            status INT NOT NULL DEFAULT 0,
-            contents VARCHAR(255) NOT NULL DEFAULT '',
-            deadline date NOT NULL ,
-            created_at date NOT NULL, 
-            update_at date NOT NULL
-        )";
+$list = (isset($_GET['done'])) ? "<h2 class='mb-2 text-3xl'>完了タスク一覧</h2>" : "<h2 class='mb-2 text-3xl'>未完了タスク一覧</h2>";
 
-$res = $dbh->query($sql);
+if (isset($_POST['search']) && $_POST['search'] != "") $_SESSION['search'] = $_POST['search'];
 
-$email = '';
-$password = '';
-$_SESSION['loginStatus'] = false;
-$count = 0;
+//search
+$searchSql = "";
+$sortSql = "";
+$search = "";
+$sorts = [];
 
-if (!isset($_SESSION['email'])) $_SESSION['email'] = '';
-if (!isset($_SESSION['error'])) $_SESSION['error'] = '';
+if (isset($_GET['search'])) {
+    $search = $_SESSION['search'];
+    $searchSql = "&& contents LIKE '%$_SESSION[search]%'";
+    $showAllTask = "<a class='text-blue-600' href=./todo.php>全件表示に戻す</a><br />";
 
-$sessionEmail = ($_SESSION['email'] != '') ? $_SESSION['email'] : '';
-$catchError = ($_SESSION['error'] != '') ? $_SESSION['error'] . "<br />" : '';
-
-$clickButton = $_SERVER["REQUEST_METHOD"] == "POST";
-
-if ($clickButton) {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-
-    $sql = "select * from users where email LIKE '$email%'";
-    $res = $dbh->query($sql);
-    $count = $res->rowCount();
-    if ($count > 0) {
-        $sql = "select * from users where email LIKE '$email%'";
-        $res = $dbh->query($sql);
-
-        foreach ($res as $value) {
-            if ($value[1] == $email && password_verify($password, $value[2])) {
-                $_SESSION['email'] = '';
-                $_SESSION['error'] = '';
-                $_SESSION['loginStatus'] = true;
-                $_SESSION['userId'] = $value[0];
-                header("Location: ./todo.php");
-                exit;
-            } else {
-                $_SESSION['email'] = $email;
-                $_SESSION['error'] = 'ログインできませんでした';
-                header("Location: ./");
-                exit;
-            }
-        }
-    } else {
-        $_SESSION['email'] = $email;
-        $_SESSION['error'] = 'ログインできませんでした';
-        header("Location: ./");
-        exit;
-    }
+    $dateAsc = (isset($_GET['done']))
+        ? "<a class='text-blue-600' href=./todo.php?search=$_SESSION[search]&done&sort=asc>締め切り昇順</a>"
+        : "<a class='text-blue-600' href=./todo.php?search=$_SESSION[search]&sort=asc>締め切り昇順</a>";
+    $dateDesc = (isset($_GET['done']))
+        ? "<a class='text-blue-600' href=./todo.php?search=$_SESSION[search]&done&sort=desc>締め切り降順</a><br />"
+        : "<a class='text-blue-600' href=./todo.php?search=$_SESSION[search]&sort=desc>締め切り降順</a><br />";
+} else {
+    $dateAsc = (isset($_GET['done']))
+        ? "<a class='text-blue-600 mr-3' href=./todo.php?done&sort=asc>締め切り昇順</a>"
+        : "<a class='text-blue-600 mr-3' href=./todo.php?sort=asc>締め切り昇順</a>";
+    $dateDesc = (isset($_GET['done']))
+        ? "<a class='text-blue-600' href=./todo.php?done&sort=desc>締め切り降順</a><br />"
+        : "<a class='text-blue-600' href=./todo.php?sort=desc>締め切り降順</a><br />";
 }
 
-$form = '
-    <div>
-        <form  action="./" method="POST">
-            <label for="email-label">メールアドレス:</label><br />
-            <input type=“text” name="email" type="email" required value=' . $sessionEmail . '><br />
-            <label for="password-label">パスワード:</label><br />
-            <input type="password" name="password"><br />
-            <input type="submit" name="send" value="ログイン">
+//sort
+if (isset($_GET['sort']) && isset($_GET['search'])) {
+    if ($_GET['sort'] == "asc") $sortSql = "order by deadline ASC";
+    elseif ($_GET['sort'] == "desc") $sortSql = "order by deadline DESC";
+} elseif (isset($_GET['sort'])) {
+    if ($_GET['sort'] == "asc") $sortSql = "order by deadline ASC";
+    elseif ($_GET['sort'] == "desc") $sortSql = "order by deadline DESC";
+}
+$sorts = ["<div class='mb-6'>", $dateAsc, $dateDesc, "</div>"];
+
+//done or not done
+$statusSql = "";
+$statusSql = "status = 0 &&";
+if (isset($_GET['not-done'])) $statusSql = "status = 0 &&";
+elseif (isset($_GET['done'])) $statusSql = "status = 1 &&";
+
+
+//default task list
+$sql = "select * from tasks where $statusSql user_id=$_SESSION[userId] $searchSql $sortSql";
+$res = $dbh->query($sql);
+$noTasks = "";
+$complete = "";
+$taskList = [];
+$job = (isset($_GET['done'])) ? "未完了に戻す" : "完了";
+
+foreach ($res as $key => $task) {
+    $check = "";
+    $tasks[] = $task['contents'];
+
+    //form
+    $complete = (isset($_GET['search']))
+        ? "<a class='text-blue-600' href=./todo.php?search=$search&status=$task[status]&contents=$task[contents]>$job</a><br />"
+        : "<a class='text-blue-600' href=./todo.php?status=$task[status]&contents=$task[contents]>$job</a><br />";
+
+
+    $taskList[] = "<p class='mb-3'>$task[contents] $task[deadline] $complete</p>";
+}
+if (count($taskList) == 0) $noTasks = "<p>現在タスクはありません</p>";
+
+
+//append tasks
+if (isset($_POST['append'])) {
+    if (!empty($_POST['task']) && !empty($_POST['deadline'])) {
+        $_SESSION['task'] = $_POST['task'];
+        $timeStanp = date("Y-m-d");
+        $sql = "INSERT INTO tasks(id, user_id, status, contents, deadline, created_at, update_at) VALUES (0, $_SESSION[userId], 0, '$_SESSION[task]', '$_POST[deadline]', '$timeStanp', '$timeStanp')";
+        $res = $dbh->query($sql);
+    }
+    header("Location: $_SERVER[REQUEST_URI]");
+    exit;
+}
+
+//logout
+$setLogout = isset($_GET['logout']);
+if ($setLogout) $_SESSION['loginStatus'] = false;
+
+
+//complete click
+$contents = "";
+if (isset($_GET['status'])) {
+    $statusId = $_GET['status'];
+    $statusId = ($statusId == 0) ? 1 : 0;
+
+    $contents = $_GET['contents'];
+    $sql = "update tasks set status = $statusId where user_id = $_SESSION[userId] && contents = '$contents'";
+    $res = $dbh->query($sql);
+    header("Location: ./todo.php");
+    exit;
+}
+
+
+$logout = "<a href=./logout.php><span class='text-white leading-9'>ログアウト</span></a><br />";
+
+$searchAction = (isset($_GET['done'])) ? "./todo.php?search=$_SESSION[search]&done" : "./todo.php?search=$_SESSION[search]";
+
+if (isset($_POST['search']) && empty($_POST['search'])) {
+    header("Location: ./todo.php");
+    exit;
+}
+
+$searchForm = "
+    <div class='mb-2'>
+        <form class='mb-12' action=$searchAction method=POST>
+        <input class='border-2 border-gray-300' type=search name=search placeholder=キーワードを入力>
+        <input class='bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded' type=submit name=submit value=検索>
         </form>
     </div>
-';
+";
+
+$appendTask = "
+        <div class='mb-2'>
+            <form action=./todo.php?append method=POST>
+            <input class='border-2 border-gray-300' type=text name=task placeholder=タスクを追加>
+            <input class='border-2 border-gray-300' type=text name=deadline placeholder=締め切り日を入力>
+            <input class='bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded' type=submit name=append value=追加>
+            </form>
+        </div>
+";
+
+$taskForm = ["<div class='mb-2'>", "<form class='pb-6' action=$_SERVER[REQUEST_URI] method=POST>", implode("\n", $taskList), "</form>", "</div>"];
+
+$header = "<div class='mb-3'><span>タスク名</span> <span>|</span> <span>締め切り</span></div>";
 
 
 ?>
@@ -97,18 +159,29 @@ $form = '
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>login</title>
+    <title>todo view</title>
+    <link rel="stylesheet" href="./src/tailwind.css">
 </head>
 
-<body>
-    <h2>ログイン</h2>
-    <?php
-    if ($_SESSION['loginStatus'] == false) {
-        echo $form;
-        echo $catchError;
-        echo '<a href="./newAccount.php">アカウントを作る</a>';
-    }
-    ?>
+<body class="bg-gray-300">
+    <div class="mx-auto md:w-7/12 w-11/12 bg-white mb-6">
+        <header class="text-right mb-14 bg-blue-500"><?php echo $logout ?></header>
+        <div class="w-9/12 mx-auto">
+            <?php
+            echo implode("", $jobs);
+            echo $searchForm;
+            echo $list;
+            echo implode("", $sorts);
+            echo "$showAllTask";
+            echo $noTasks;
+            if (isset($_GET['done'])) echo "";
+            else echo "<a class='text-blue-600 text-5xl block mb-6' href=./todo.php?new-task=true>+</a>";
+            echo $header;
+            if (filter_input(INPUT_GET, 'new-task', FILTER_VALIDATE_BOOL)) echo $appendTask;
+            echo implode("\n", $taskForm);
+            ?>
+        </div>
+    </div>
 </body>
 
 </html>
